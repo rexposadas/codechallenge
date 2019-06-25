@@ -15,6 +15,6 @@ func main() {
 		return
 	}
 
-	fmt.Printf("%+v", result)
+	fmt.Printf("%s", result.FormatOutput())
 
 }

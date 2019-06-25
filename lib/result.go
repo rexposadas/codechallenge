@@ -5,21 +5,22 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"math/big"
 )
 
 // Signature is made up of two numbers.
 type Signature struct {
-	r, s *big.Int
+	R, S *big.Int
 }
 
 // Result .
 type Result struct {
-	Message    string
-	Signature  Signature
-	PubKey     ecdsa.PublicKey
-	PrivateKey *ecdsa.PrivateKey
+	Message    string            `json:"message"`
+	Signature  Signature         `json:"signature"`
+	PubKey     ecdsa.PublicKey   `json:"pubkey"`
+	PrivateKey *ecdsa.PrivateKey `json:"-"`
 }
 
 // NewResult generates the stuff ...
@@ -43,12 +44,28 @@ func NewResult(message string) (*Result, error) {
 		return nil, fmt.Errorf("%s", err)
 	}
 	sig := Signature{
-		r: r,
-		s: s,
+		R: r,
+		S: s,
 	}
 	result.Signature = sig
 
 	result.PubKey = result.PrivateKey.PublicKey
 
 	return result, nil
+}
+
+// FormatOutput is a convenience method to give us the out in the format that we want.
+// Sample format:
+// {
+//   "message":"your@email.com",
+//   "signature":"MGUCMGrxqpS689zQEi5yoBElG41u6U7eKX7ZzaXmXr0C5HgNXlJbiiVQYUS0ZOBxsLU4UgIxAL9AAgkRBUQ7/3EKQag4MjRflAxbfpbGmxb6ar9d4bGZ8FDQkUe6cnCIRleaxFnu2A==",
+//   "pubkey":"-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEDUlT2XxqQAR3PBjeL2D8pQJdghFyBXWI\n/7RvD8Tsdv1YVFwqkJNEC3lNS4Gp7a19JfcrI/8fabLI+yPZBPZjtvuwRoauvGC6\nwdBrL2nzrZxZL4ZsUVNbWnG4SmqQ1f2k\n-----END PUBLIC KEY-----\n"
+// }
+func (r *Result) FormatOutput() []byte {
+	b, err := json.Marshal(r)
+	if err != nil {
+		return []byte(fmt.Sprintf("failed to format for output %s", err))
+	}
+
+	return b
 }
