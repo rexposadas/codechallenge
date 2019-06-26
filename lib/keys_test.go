@@ -17,7 +17,7 @@ func TestResult(t *testing.T) {
 	msg := "simple tests"
 
 	//  Generate the keys for a given msg input.
-	result, err := NewKeys(msg)
+	result, err := GenerateKeys(msg)
 	if err != nil {
 		t.Fatalf("failed to generate keys %s", err)
 	}
@@ -43,14 +43,14 @@ func TestOutput(t *testing.T) {
 	msg := []byte("rexposadas@gmail.com")
 
 	//  Generate the keys for a given msg input.
-	output, err := NewKeys(string(msg))
+	output, err := GenerateKeys(string(msg))
 	if err != nil {
 		t.Fatalf("failed to generate keys %s", err)
 	}
 	output.FormatOutput()
 
 	// Parse out the signature.
-	der, err := base64.StdEncoding.DecodeString(output.SignatureOutput)
+	der, err := base64.StdEncoding.DecodeString(output.EncodedSignature)
 	if err != nil {
 		t.Fatalf("failed to get decode signature %s", err)
 	}
@@ -62,9 +62,9 @@ func TestOutput(t *testing.T) {
 	}
 
 	h := toSha256(msg)
-	pubkey, err := loadPublicKey(output.EncodedPubKey)
+	pubkey, err := loadPublicKey(output.PEMEncodedPubKey)
 	if err != nil {
-		t.Fatalf("failed to load public key %s %s", output.EncodedPubKey, err)
+		t.Fatalf("failed to load public key %s %s", output.PEMEncodedPubKey, err)
 	}
 
 	if valid := ecdsa.Verify(
