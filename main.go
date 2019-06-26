@@ -9,7 +9,7 @@ import (
 
 func main() {
 	input := os.Args[1]
-	result, err := lib.NewResult(input)
+	result, err := lib.NewKeys(input)
 	if err != nil {
 		fmt.Printf("%s", err)
 		return

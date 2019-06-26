@@ -14,7 +14,8 @@ import (
 func TestResult(t *testing.T) {
 	msg := "simple tests"
 
-	result, err := NewResult(msg)
+	//  Generate the keys for a given msg input.
+	result, err := NewKeys(msg)
 	if err != nil {
 		t.Fatalf("failed to generate keys %s", err)
 	}
