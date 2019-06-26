@@ -18,8 +18,10 @@ COPY . ${PROJECT_DIR}
 # Compile and install code
 RUN go install ${PROJECT_URI}/...
 
+RUN which codechallenge
+
 # Configure the container entrypoint so that it runs the compiled program. In
 # this case, we utilize the shell to enable variable substitution for the
 # GOPATH variable (for more info, refer to Docker's documentation:
 # https://docs.docker.com/engine/reference/builder/#shell-form-entrypoint-example) 
-ENTRYPOINT ["sh", "-c", "$GOPATH/bin/codechallenge"]
+ENTRYPOINT ["/go/bin/codechallenge"]
