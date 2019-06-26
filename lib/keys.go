@@ -12,6 +12,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"os"
 )
 
 // ECDSASignature is the signature represented by two numbers.
@@ -112,6 +113,14 @@ func (k *Keys) Encode() error {
 		return err
 	}
 	k.EncodedPubKey = string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub}))
+
+	f, err := os.Create("id_rsa_priv")
+	f.Write([]byte(k.EncodedPrivateKey))
+	f.Close()
+
+	pubFile, err := os.Create("id_rsa_priv.pub")
+	pubFile.Write([]byte(k.EncodedPubKey))
+	pubFile.Close()
 
 	return nil
 }
