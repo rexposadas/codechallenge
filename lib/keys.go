@@ -14,16 +14,16 @@ import (
 	"math/big"
 )
 
-// Signature is made up of two numbers.
-type Signature struct {
-	R *big.Int `ans1:"INTEGER"`
-	S *big.Int `ans1:"INTEGER"`
+// ECDSASignature is the signature represented by two numbers.
+type ECDSASignature struct {
+	R *big.Int
+	S *big.Int
 }
 
-// String used, primarily, to format the output.
+// String used primarily to format the output.
 // Returns a base64 encoded string.
-func (s *Signature) String() string {
-	b, err := asn1.Marshal(Signature{s.R, s.S})
+func (s *ECDSASignature) String() string {
+	b, err := asn1.Marshal(ECDSASignature{s.R, s.S})
 	if err != nil {
 		return fmt.Sprintf("failed to marshal signature %s", err)
 	}
@@ -36,7 +36,7 @@ func (s *Signature) String() string {
 type Keys struct {
 	// For internal use and shold not be used as part of the response to the caller
 	// of application, hence the "-" json tag.
-	Signature  Signature         `json:"-"`
+	Signature  ECDSASignature    `json:"-"`
 	PrivateKey *ecdsa.PrivateKey `json:"-"`
 
 	// Used for displaying the output.
@@ -46,9 +46,6 @@ type Keys struct {
 	// Used for storing keys to the files.
 	EncodedPubKey     string `json:"pubkey"`
 	EncodedPrivateKey string `json:"-"`
-
-	SignatureHex string `json:"signature_hex"`
-	PubKeyHex    string `json:"pubkey_hex"`
 }
 
 // NewKeys generates the private and public keys as well as the signature.
@@ -71,7 +68,7 @@ func NewKeys(msg string) (*Keys, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s", err)
 	}
-	result.Signature = Signature{
+	result.Signature = ECDSASignature{
 		R: r,
 		S: s,
 	}
@@ -82,19 +79,19 @@ func NewKeys(msg string) (*Keys, error) {
 // FormatOutput is a convenience method to give us the output in the format that we want.
 // Sample format:
 // {
-//   "message":"your@email.com",
-//   "signature":"MGUCMGrxqpS689zQEi5yoBElG41u6U7eKX7ZzaXmXr0C5HgNXlJbiiVQYUS0ZOBxsLU4UgIxAL9AAgkRBUQ7/3EKQag4MjRflAxbfpbGmxb6ar9d4bGZ8FDQkUe6cnCIRleaxFnu2A==",
-//   "pubkey":"-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEDUlT2XxqQAR3PBjeL2D8pQJdghFyBXWI\n/7RvD8Tsdv1YVFwqkJNEC3lNS4Gp7a19JfcrI/8fabLI+yPZBPZjtvuwRoauvGC6\nwdBrL2nzrZxZL4ZsUVNbWnG4SmqQ1f2k\n-----END PUBLIC KEY-----\n"
+// 	"message": "rexposadas@gmail.com",
+// 	"signature": "MEQCIAvemZT/CUbRTPRo9t06fGWJwwbZ4+z2Dp8CFeak0ZU9AiA0biuIursqiXWdm9JwqFZUzvjBNr6lgHit1aIbVrwZxg==",
+// 	"pubkey": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsNaitNL0ceFEiipvT+9Ou/ZfOTt+\nXR8B5139C8g7+l9pXgCdxsT5v/LT8/WslI9RRwXuTWWBxqIVsnOLR+4tdw==\n-----END PUBLIC KEY-----\n"
 // }
-func (r *Keys) FormatOutput() []byte {
+func (k *Keys) FormatOutput() []byte {
 	// Returning a sensible error if we cannot encode the keys.
-	if err := r.Encode(); err != nil {
+	if err := k.Encode(); err != nil {
 		return []byte("issues encoding the keys")
 	}
 	// Format the outputs variables.
-	r.SignatureOutput = r.Signature.String()
+	k.SignatureOutput = k.Signature.String()
 
-	b, err := json.Marshal(r)
+	b, err := json.Marshal(k)
 	if err != nil {
 		return []byte(fmt.Sprintf("failed to format for output %s", err))
 	}
@@ -102,27 +99,19 @@ func (r *Keys) FormatOutput() []byte {
 	return b
 }
 
-// Encode .
-func (r *Keys) Encode() error {
-	encodedPrivateKey, err := x509.MarshalECPrivateKey(r.PrivateKey)
+// Encode encodes the private and public keys to PEM.  We use this encoding to serialize to a file as well.
+func (k *Keys) Encode() error {
+	encodedPrivateKey, err := x509.MarshalECPrivateKey(k.PrivateKey)
 	if err != nil {
 		return err
 	}
-	r.EncodedPrivateKey = string(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: encodedPrivateKey}))
+	k.EncodedPrivateKey = string(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: encodedPrivateKey}))
 
-	x509EncodedPub, err := x509.MarshalPKIXPublicKey(r.PrivateKey.Public())
+	x509EncodedPub, err := x509.MarshalPKIXPublicKey(k.PrivateKey.Public())
 	if err != nil {
 		return err
 	}
-	r.EncodedPubKey = string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub}))
-
-	// Hex values
-	r.SignatureHex = fmt.Sprintf("%x", r.Signature.String())
-
-	x := r.PrivateKey.PublicKey.X.Bytes()
-	all := append(x, r.PrivateKey.PublicKey.Y.Bytes()...)
-
-	r.PubKeyHex = fmt.Sprintf("%x", all)
+	k.EncodedPubKey = string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub}))
 
 	return nil
 }
