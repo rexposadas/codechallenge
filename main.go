@@ -9,12 +9,11 @@ import (
 
 func main() {
 	input := os.Args[1]
-	result, err := lib.NewKeys(input)
+	r, err := lib.NewKeys(input)
 	if err != nil {
 		fmt.Printf("%s", err)
 		return
 	}
 
-	fmt.Printf("%s", result.FormatOutput())
-
+	fmt.Printf("%s", r.FormatOutput())
 }

@@ -5,7 +5,9 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"math/big"
 )
@@ -31,10 +33,13 @@ type Keys struct {
 	Signature  Signature         `json:"-"`
 	PrivateKey *ecdsa.PrivateKey `json:"-"`
 
-	// Member variables that will be used for the output.
+	// Used for displaying the output.
 	Message         string `json:"message"`
 	SignatureOutput string `json:"signature"`
-	PubKey          string `json:"pubkey"`
+
+	// Used for storing keys to the files.
+	EncodedPubKey     string `json:"pubkey"`
+	EncodedPrivateKey string `json:"-"`
 }
 
 // NewKeys generates the the private and public keys.
@@ -53,20 +58,18 @@ func NewKeys(msg string) (*Keys, error) {
 	// Get the signature.
 	hash := sha256.Sum256([]byte(result.Message))
 	r, s, err := ecdsa.Sign(rand.Reader, privateKey, hash[:])
-
 	if err != nil {
 		return nil, fmt.Errorf("%s", err)
 	}
-	sig := Signature{
+	result.Signature = Signature{
 		R: r,
 		S: s,
 	}
-	result.Signature = sig
 
 	return result, nil
 }
 
-// FormatOutput is a convenience method to give us the out in the format that we want.
+// FormatOutput is a convenience method to give us the output in the format that we want.
 // Sample format:
 // {
 //   "message":"your@email.com",
@@ -74,14 +77,9 @@ func NewKeys(msg string) (*Keys, error) {
 //   "pubkey":"-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEDUlT2XxqQAR3PBjeL2D8pQJdghFyBXWI\n/7RvD8Tsdv1YVFwqkJNEC3lNS4Gp7a19JfcrI/8fabLI+yPZBPZjtvuwRoauvGC6\nwdBrL2nzrZxZL4ZsUVNbWnG4SmqQ1f2k\n-----END PUBLIC KEY-----\n"
 // }
 func (r *Keys) FormatOutput() []byte {
-
+	r.Encode()
 	// Format the outputs variables.
 	r.SignatureOutput = r.Signature.String()
-
-	// Format Public Key .
-	x := r.PrivateKey.X.Bytes()
-	all := append(x, r.PrivateKey.Y.Bytes()...)
-	r.PubKey = fmt.Sprintf("%x", all)
 
 	b, err := json.Marshal(r)
 	if err != nil {
@@ -89,4 +87,16 @@ func (r *Keys) FormatOutput() []byte {
 	}
 
 	return b
+}
+
+// Encode .
+func (r *Keys) Encode() {
+	encodedPrivateKey, err := x509.MarshalECPrivateKey(r.PrivateKey)
+	if err != nil {
+		panic(err)
+	}
+	r.EncodedPrivateKey = string(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: encodedPrivateKey}))
+
+	x509EncodedPub, _ := x509.MarshalPKIXPublicKey(r.PrivateKey.Public())
+	r.EncodedPubKey = string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub}))
 }
