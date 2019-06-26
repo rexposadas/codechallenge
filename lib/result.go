@@ -15,12 +15,24 @@ type Signature struct {
 	R, S *big.Int
 }
 
-// Result .
+// String used, primarily, to format the output.
+func (s *Signature) String() string {
+	r := s.R.Bytes()
+	all := (append(r, s.S.Bytes()...))
+
+	return fmt.Sprintf("%x", all)
+}
+
+// Result is the result of our key generate process.
 type Result struct {
-	Message    string            `json:"message"`
-	Signature  Signature         `json:"signature"`
-	PubKey     ecdsa.PublicKey   `json:"pubkey"`
+	// For internal use hense the "-" json tag.
+	Signature  Signature         `json:"-"`
 	PrivateKey *ecdsa.PrivateKey `json:"-"`
+
+	// Member variables that will be used for the output.
+	Message         string `json:"message"`
+	SignatureOutput string `json:"signature"`
+	PubKey          string `json:"pubkey"`
 }
 
 // NewResult generates the stuff ...
@@ -49,8 +61,6 @@ func NewResult(message string) (*Result, error) {
 	}
 	result.Signature = sig
 
-	result.PubKey = result.PrivateKey.PublicKey
-
 	return result, nil
 }
 
@@ -62,6 +72,15 @@ func NewResult(message string) (*Result, error) {
 //   "pubkey":"-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEDUlT2XxqQAR3PBjeL2D8pQJdghFyBXWI\n/7RvD8Tsdv1YVFwqkJNEC3lNS4Gp7a19JfcrI/8fabLI+yPZBPZjtvuwRoauvGC6\nwdBrL2nzrZxZL4ZsUVNbWnG4SmqQ1f2k\n-----END PUBLIC KEY-----\n"
 // }
 func (r *Result) FormatOutput() []byte {
+
+	// Format the outputs variables.
+	r.SignatureOutput = r.Signature.String()
+
+	// Format Public Key .
+	x := r.PrivateKey.X.Bytes()
+	all := append(x, r.PrivateKey.Y.Bytes()...)
+	r.PubKey = fmt.Sprintf("%x", all)
+
 	b, err := json.Marshal(r)
 	if err != nil {
 		return []byte(fmt.Sprintf("failed to format for output %s", err))
