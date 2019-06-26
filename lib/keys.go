@@ -6,6 +6,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/asn1"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -14,15 +16,19 @@ import (
 
 // Signature is made up of two numbers.
 type Signature struct {
-	R, S *big.Int
+	R *big.Int `ans1:"INTEGER"`
+	S *big.Int `ans1:"INTEGER"`
 }
 
 // String used, primarily, to format the output.
+// Returns a base64 encoded string.
 func (s *Signature) String() string {
-	r := s.R.Bytes()
-	all := (append(r, s.S.Bytes()...))
+	b, err := asn1.Marshal(Signature{s.R, s.S})
+	if err != nil {
+		return fmt.Sprintf("failed to marshal signature %s", err)
+	}
 
-	return fmt.Sprintf("%x", all)
+	return base64.StdEncoding.EncodeToString(b)
 }
 
 // Keys is the result of our key generation process.
@@ -40,9 +46,13 @@ type Keys struct {
 	// Used for storing keys to the files.
 	EncodedPubKey     string `json:"pubkey"`
 	EncodedPrivateKey string `json:"-"`
+
+	SignatureHex string `json:"signature_hex"`
+	PubKeyHex    string `json:"pubkey_hex"`
 }
 
-// NewKeys generates the the private and public keys.
+// NewKeys generates the private and public keys as well as the signature.
+// msg is the string used to generate the signature.
 func NewKeys(msg string) (*Keys, error) {
 	result := &Keys{
 		Message: msg,
@@ -55,7 +65,7 @@ func NewKeys(msg string) (*Keys, error) {
 	}
 	result.PrivateKey = privateKey
 
-	// Get the signature.
+	// Generate the signature.
 	hash := sha256.Sum256([]byte(result.Message))
 	r, s, err := ecdsa.Sign(rand.Reader, privateKey, hash[:])
 	if err != nil {
@@ -77,7 +87,10 @@ func NewKeys(msg string) (*Keys, error) {
 //   "pubkey":"-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEDUlT2XxqQAR3PBjeL2D8pQJdghFyBXWI\n/7RvD8Tsdv1YVFwqkJNEC3lNS4Gp7a19JfcrI/8fabLI+yPZBPZjtvuwRoauvGC6\nwdBrL2nzrZxZL4ZsUVNbWnG4SmqQ1f2k\n-----END PUBLIC KEY-----\n"
 // }
 func (r *Keys) FormatOutput() []byte {
-	r.Encode()
+	// Returning a sensible error if we cannot encode the keys.
+	if err := r.Encode(); err != nil {
+		return []byte("issues encoding the keys")
+	}
 	// Format the outputs variables.
 	r.SignatureOutput = r.Signature.String()
 
@@ -90,13 +103,26 @@ func (r *Keys) FormatOutput() []byte {
 }
 
 // Encode .
-func (r *Keys) Encode() {
+func (r *Keys) Encode() error {
 	encodedPrivateKey, err := x509.MarshalECPrivateKey(r.PrivateKey)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	r.EncodedPrivateKey = string(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: encodedPrivateKey}))
 
-	x509EncodedPub, _ := x509.MarshalPKIXPublicKey(r.PrivateKey.Public())
+	x509EncodedPub, err := x509.MarshalPKIXPublicKey(r.PrivateKey.Public())
+	if err != nil {
+		return err
+	}
 	r.EncodedPubKey = string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub}))
+
+	// Hex values
+	r.SignatureHex = fmt.Sprintf("%x", r.Signature.String())
+
+	x := r.PrivateKey.PublicKey.X.Bytes()
+	all := append(x, r.PrivateKey.PublicKey.Y.Bytes()...)
+
+	r.PubKeyHex = fmt.Sprintf("%x", all)
+
+	return nil
 }
