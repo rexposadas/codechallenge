@@ -15,8 +15,14 @@ func main() {
 	}
 	input := os.Args[1]
 
+	// We limit the input size to 250 characters. Return than error if it exceeds the size limit.
+	if len(input) > 250 {
+		fmt.Printf("Message should less than 251 characters.")
+		os.Exit(1)
+	}
+
 	// Use the inputed message to generate the keys. If the keys exists in the file
-	// system, load them.
+	// system, load them. If not, generate them.
 	r, err := lib.ProcessMessage(input)
 	if err != nil {
 		fmt.Printf("failed to generate keys: %s", err)

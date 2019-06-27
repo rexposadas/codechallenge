@@ -17,7 +17,7 @@ func TestResult(t *testing.T) {
 	msg := "simple tests"
 
 	//  Generate the keys for a given msg input.
-	result, err := GenerateKeys(msg)
+	result, err := generateKeys(msg)
 	if err != nil {
 		t.Fatalf("failed to generate keys %s", err)
 	}
@@ -43,7 +43,7 @@ func TestOutput(t *testing.T) {
 	msg := []byte("rexposadas@gmail.com")
 
 	//  Generate the keys for a given msg input.
-	output, err := GenerateKeys(string(msg))
+	output, err := ProcessMessage(string(msg))
 	if err != nil {
 		t.Fatalf("failed to generate keys %s", err)
 	}

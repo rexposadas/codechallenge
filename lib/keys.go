@@ -51,12 +51,15 @@ type Keys struct {
 
 // ProcessMessage processcess the msg parameter and returns the keys with the signature.
 //
+// Params:
+// 	msg: The string to use when generating the signature.
+//
 // This function does the following:
 // 1. Generate the private and public keys if they do not exist in the file system.
 // 	a. If they keys exists in the file system, load them.
-//	b. if they had to be create, write them to the file system.
+//	b. if they had to be created, write them to the file system.
 // 2. Generate the signature using the msg parameter.
-// 3. Prepare the Key struct to be output in the proper format.
+// 3. Prepare the Key struct to be outputed in the proper format.
 func ProcessMessage(msg string) (*Keys, error) {
 	// Check if they keys are in the file system.
 	keys, err := loadKeysFromFile(msg)
@@ -65,17 +68,35 @@ func ProcessMessage(msg string) (*Keys, error) {
 	}
 
 	// At this point, we didn't find the keys in the file system. Generate them.
-	keys, err = GenerateKeys(msg)
+	keys, err = generateKeys(msg)
 	if err != nil {
 		return nil, err
+	}
+
+	// At this point we have the private and public keys.
+	// Generate the signature and write the keys to the file.
+	// For the rest of the function, we will return the Keys struct because
+	// we have valid private and public keys, but return an error if we encounter one.
+
+	// prepare the keys to be writen to a file.
+	if err := keys.pemEncode(); err != nil {
+		return keys, fmt.Errorf("failed to encode the keys%s", err)
+	}
+
+	if err := keys.generateSignature(); err != nil {
+		return keys, fmt.Errorf("failed to generate signature: %s", err)
+	}
+
+	if err := keys.writeToFile(); err != nil {
+		return keys, fmt.Errorf("failed to write to file system %s", err)
 	}
 
 	return keys, nil
 }
 
-// GenerateKeys generates the private and public keys as well as the signature.
+// generateKeys generates the private and public keys as well as the signature.
 // msg is the string used to generate the signature.
-func GenerateKeys(msg string) (*Keys, error) {
+func generateKeys(msg string) (*Keys, error) {
 	result := &Keys{
 		Message: msg,
 	}
@@ -87,16 +108,12 @@ func GenerateKeys(msg string) (*Keys, error) {
 	}
 	result.PrivateKey = privateKey
 
-	result.PEMEncode()
-	result.GenerateSignature()
-	result.WriteToFile()
-
 	return result, nil
 }
 
-// GenerateSignature sets the Signature member variable given the message.
+// generateSignature sets the Signature member variable given the message.
 // At this point, we assume that his object already has a handle to the message.
-func (k *Keys) GenerateSignature() error {
+func (k *Keys) generateSignature() error {
 	if k.Message == "" {
 		return fmt.Errorf("missing message")
 	}
@@ -122,7 +139,7 @@ func (k *Keys) GenerateSignature() error {
 // }
 func (k *Keys) FormatOutput() []byte {
 	// Returning a sensible error if we cannot encode the keys.
-	if err := k.PEMEncode(); err != nil {
+	if err := k.pemEncode(); err != nil {
 		return []byte("issues encoding the keys")
 	}
 	// Format the outputs variables.
@@ -136,8 +153,8 @@ func (k *Keys) FormatOutput() []byte {
 	return b
 }
 
-// PEMEncode encodes the private and public keys to PEM.  We use this encoding to serialize to a file as well.
-func (k *Keys) PEMEncode() error {
+// pemEncode encodes the private and public keys to PEM.  We use this encoding to serialize to a file as well.
+func (k *Keys) pemEncode() error {
 	encodedPrivateKey, err := x509.MarshalECPrivateKey(k.PrivateKey)
 	if err != nil {
 		return err
@@ -153,8 +170,8 @@ func (k *Keys) PEMEncode() error {
 	return nil
 }
 
-// WriteToFile writes the private and public keys to the file system.
-func (k *Keys) WriteToFile() error {
+// writeToFile writes the private and public keys to the file system.
+func (k *Keys) writeToFile() error {
 	privateKeyFilename, publicKeyFilename := fileName(k.Message)
 
 	f, err := os.Create(privateKeyFilename)

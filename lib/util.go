@@ -90,7 +90,7 @@ func loadKeysFromFile(msg string) (*Keys, error) {
 	loadedKeys.PEMEncodedPubKey = string(publicKeyBytes)
 
 	// Generate the signature
-	if err := loadedKeys.GenerateSignature(); err != nil {
+	if err := loadedKeys.generateSignature(); err != nil {
 		return nil, fmt.Errorf("failed to generate signature from loaded files %s", err)
 	}
 
