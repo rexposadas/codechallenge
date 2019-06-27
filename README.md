@@ -2,6 +2,19 @@
 This application is an excercise in generating ECDSA keys and a bit of Docker.
 
 
+## Answer to challenge
+
+Here is the output of the application when using my email address as the input value:
+
+```
+{
+  "message": "rexposadas@gmail.com",
+  "signature": "MEUCIQDRUk924mRy74HXTFsNoxnQ2eSyklKQww5O3wAyICuyIwIgWvBxEKHutL7DX2MPktfNzpN+7NC/yP8MuPTmEtE+QBA=",
+  "pubkey": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEoyekebw/acI6//bLc/clzMWJYzha\ndVtwKm5yHz6M6XhVepZdBSPPmKt+QVMAK7L6eZ6qgyngdDKba2LkP5wK8g==\n-----END PUBLIC KEY-----\n"
+}
+```
+
+
 ## Running the application
 
 After you have cloned this repository, you can do the following to run it: 
