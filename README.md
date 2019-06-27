@@ -4,6 +4,9 @@ This application is an excercise in generating ECDSA keys and a bit of Docker.
 
 ## Running the application
 
+After you have cloned this repository, you can do the following to run it: 
+
+
 ### Using go build
 
 `go build && ./codechallenge rexposadas@gmail.com`
