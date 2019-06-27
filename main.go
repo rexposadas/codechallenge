@@ -21,14 +21,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Use the inputed message to generate the keys. If the keys exists in the file
-	// system, load them. If not, generate them.
+	// Use the inputed message to generate the keys.
 	r, err := lib.ProcessMessage(input)
 	if err != nil {
 		fmt.Printf("failed to generate keys: %s", err)
 		os.Exit(1)
 	}
 
-	// Display the result.
+	// Display the result using the required format.
 	fmt.Printf("%s", r.FormatOutput())
 }
