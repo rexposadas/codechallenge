@@ -8,7 +8,7 @@ This application is an excercise in generating ECDSA keys and a bit of Docker.
 
 `go build && ./codechallenge rexposadas@gmail.com`
 
-If you have jq installed, you can do the following for a prettier format. 
+If you have [jq](https://stedolan.github.io/jq/) installed, you can do the following for a prettier format. 
 
 ```
 ➜ go build && ./codechallenge rexposadas@gmail.com | jq '.'
@@ -42,16 +42,16 @@ I can see running a similar command to the one below during the deployment proce
 `docker run -e test=true codechal`
 
 
-### Design decisions I needed to make
+### Design decisions I made
 
-1.  In the requirements it stated "Subsequent invocations of your application should read from the same files". I assumed that this was a requirement only for the non-dockerize running of the application.  Subsequent calls of this applicationg using the following format:
+1.  In the requirements it stated "Subsequent invocations of your application should read from the same files". I assumed that this was a requirement only for the non-dockerized running of the application.  Subsequent calls of this applicationg using the following format:
 
 `go build && ./codechallenge rexposadas@gmail.com`
 
 
 will use the files created. 
 
-If this was a requirement for running the application in Docker as well, I would have made one or more of the following:
+Docker container's lifecycle was limited to a single run of the application.  Hence, after the application has written the file inside the container and returned, the container dies and the files go with it. If this was a requirement for running the application in Docker as well, I would have done one or more of the following:
         
         a. Use a [volume](https://docs.docker.com/storage/volumes/) in order to hold the files. 
         b. Create a webservice so that this will be a long running application.  Generating the keys will be an API call in this case. 
