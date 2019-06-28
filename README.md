@@ -2,7 +2,9 @@
 This application is an excercise in generating ECDSA keys and a bit of Docker.
 
 
-## Answer to challenge
+## Submission Requirements
+
+### Provide the JSON output returned from your application using an input value of your email address
 
 Here is the output of the application when using my email address as the input value:
 
@@ -13,7 +15,6 @@ Here is the output of the application when using my email address as the input v
   "pubkey": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEoyekebw/acI6//bLc/clzMWJYzha\ndVtwKm5yHz6M6XhVepZdBSPPmKt+QVMAK7L6eZ6qgyngdDKba2LkP5wK8g==\n-----END PUBLIC KEY-----\n"
 }
 ```
-
 
 ## Running the application
 
@@ -74,6 +75,6 @@ Docker container's lifecycle was limited to a single run of the application.  He
 
 2. Some key generation tools default storing the new keys in the user's home directory. I opted to generate them in the same directory the application was ran.  I didn't want to write them in the user's home directory since the testers of this application will probably not want me doing that in their machines. 
 
-3. I wrote most of the key generation code in the `lib` directory. I couldn't think of a better name and didn't bother given the time constraints.
+3. I wrote most of the key generation code in the `lib` directory. I couldn't think of a better name and didn't bother changing it, given the time constraints.
 
 
